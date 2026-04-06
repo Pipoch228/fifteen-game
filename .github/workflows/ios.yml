@@ -9,37 +9,41 @@ on:
 
 jobs:
   build-ios:
-    runs-on: macos-14
+    runs-on: macos-latest
     
     steps:
     - uses: actions/checkout@v4
     
-    - name: Set up Flutter
+    - name: Setup Flutter
       uses: subosito/flutter-action@v2
       with:
         flutter-version: 'stable'
     
-    - name: Install dependencies
+    - name: Debug Flutter
       run: |
-        flutter pub get
-        flutter doctor -v
+        pwd
+        which flutter || echo "Flutter not in PATH"
+        ls -la $HOME/flutter/bin/ 2>/dev/null || echo "Flutter not installed"
+        flutter --version || echo "Flutter command failed"
     
-    - name: Check iOS directory
-      run: |
-        ls -la ios/
+    - name: Get dependencies
+      run: flutter pub get || echo "flutter pub get failed"
+    
+    - name: Check Flutter doctor
+      run: flutter doctor || echo "flutter doctor failed"
+    
+    - name: List available simulators
+      run: xcrun simctl list devices available || echo "No simulators"
     
     - name: Build iOS
-      env:
-        FLUTTER_SUPPRESS_ANALYTICS: true
       run: |
-        cd ios && pod install && cd ..
-        flutter build ios --release --no-codesign
+        echo "Starting iOS build..."
+        flutter build ios --release --no-codesign 2>&1
+        echo "Build command completed"
     
-    - name: Verify build
+    - name: Check build output
       run: |
-        ls -la build/ios/iphonesimulator/ 2>/dev/null || ls -la build/ios/iphoneos/ 2>/dev/null || echo "Build not found"
-    
-    - name: Upload artifacts
-      if: success()
-      run: |
-        find build -name "*.app" -type d | head -1 | xargs -I {} echo "Found: {}"
+        echo "Checking build directory..."
+        ls -la build/ios/ 2>/dev/null || echo "No build/ios directory"
+        ls -la build/ios/iphonesimulator/ 2>/dev/null || echo "No iphonesimulator"
+        ls -la build/ios/iphoneos/ 2>/dev/null || echo "No iphoneos"
