@@ -9,7 +9,7 @@ on:
 
 jobs:
   build-ios:
-    runs-on: macos-latest
+    runs-on: macos-14
     
     steps:
     - uses: actions/checkout@v4
@@ -22,20 +22,24 @@ jobs:
     - name: Install dependencies
       run: |
         flutter pub get
-        flutter doctor
+        flutter doctor -v
+    
+    - name: Check iOS directory
+      run: |
+        ls -la ios/
     
     - name: Build iOS
+      env:
+        FLUTTER_SUPPRESS_ANALYTICS: true
       run: |
-        flutter build ios --release --no-codesign 2>&1 || true
+        cd ios && pod install && cd ..
+        flutter build ios --release --no-codesign
     
-    - name: Check build output
+    - name: Verify build
       run: |
-        ls -la build/ios/ 2>/dev/null || echo "No build directory"
+        ls -la build/ios/iphonesimulator/ 2>/dev/null || ls -la build/ios/iphoneos/ 2>/dev/null || echo "Build not found"
     
-    - name: Upload build artifacts
+    - name: Upload artifacts
       if: success()
-      uses: actions/upload-artifact@v4
-      with:
-        name: ios-build
-        path: build/ios/iphoneos/Runner.app
-        retention-days: 7
+      run: |
+        find build -name "*.app" -type d | head -1 | xargs -I {} echo "Found: {}"
