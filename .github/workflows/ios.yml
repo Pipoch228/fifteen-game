@@ -25,27 +25,24 @@ jobs:
         export PATH="$PATH:$GITHUB_WORKSPACE/flutter/bin"
         flutter pub get
     
-    - name: Check iOS directory
-      run: |
-        ls -la ios/
-        ls -la ios/Flutter/
-        cat ios/Flutter/Debug.xcconfig || echo "No Debug.xcconfig"
-        cat ios/Flutter/Release.xcconfig || echo "No Release.xcconfig"
-    
     - name: Build iOS
       run: |
         export PATH="$PATH:$GITHUB_WORKSPACE/flutter/bin"
-        flutter build ios --release --no-codesign 2>&1 | tee build.log
-        echo "=== BUILD LOG END ==="
-        tail -100 build.log
+        flutter build ios --release --no-codesign
     
-    - name: Check build result
+    - name: Find Runner.app
       run: |
-        ls -la build/ios/iphonesimulator/ 2>/dev/null || echo "No simulator build"
-        ls -la build/ios/iphoneos/ 2>/dev/null || echo "No device build"
+        find build -name "*.app" -type d 2>/dev/null || echo "No app found"
+        ls -la build/ios/ 2>/dev/null || echo "No build/ios"
     
     - name: Upload artifacts
       if: success()
+      run: |
+        APP_PATH=$(find build -name "Runner.app" -type d 2>/dev/null | head -1)
+        echo "Found app at: $APP_PATH"
+        if [ -n "$APP_PATH" ]; then
+          echo "Uploading $APP_PATH"
+        fi
       uses: actions/upload-artifact@v4
       with:
         name: ios-build
