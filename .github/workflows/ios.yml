@@ -30,21 +30,8 @@ jobs:
         export PATH="$PATH:$GITHUB_WORKSPACE/flutter/bin"
         flutter build ios --release --no-codesign
     
-    - name: Find Runner.app
-      run: |
-        find build -name "*.app" -type d 2>/dev/null || echo "No app found"
-        ls -la build/ios/ 2>/dev/null || echo "No build/ios"
-    
-    - name: Upload artifacts
-      if: success()
+    - name: Find and upload artifacts
       run: |
         APP_PATH=$(find build -name "Runner.app" -type d 2>/dev/null | head -1)
         echo "Found app at: $APP_PATH"
-        if [ -n "$APP_PATH" ]; then
-          echo "Uploading $APP_PATH"
-        fi
-      uses: actions/upload-artifact@v4
-      with:
-        name: ios-build
-        path: build/ios/iphonesimulator/Runner.app
-        retention-days: 7
+        ls -la "$APP_PATH" 2>/dev/null || echo "Cannot list app"
