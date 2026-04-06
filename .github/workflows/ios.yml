@@ -14,26 +14,23 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
-    - name: Cache Flutter
-      uses: actions/cache@v3
-      with:
-        path: ~/flutter
-        key: ${{ runner.os }}-flutter-v2-${{ hashFiles('**/pubspec.lock') }}
-        restore-keys: |
-          ${{ runner.os }}-flutter-v2-
-    
-    - name: Setup Flutter
-      uses: subosito/flutter-action@v1
-      with:
-        flutter-version: 'stable'
-        cache: true
-        cache-path: ~/flutter
+    - name: Download Flutter
+      run: |
+        curl -sL https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/flutter_macos_3.27.4-stable.zip -o flutter.zip
+        unzip -q flutter.zip
+        rm flutter.zip
+        export PATH="$PATH:$GITHUB_WORKSPACE/flutter/bin"
+        flutter --version
     
     - name: Install dependencies
-      run: flutter pub get
+      run: |
+        export PATH="$PATH:$GITHUB_WORKSPACE/flutter/bin"
+        flutter pub get
     
     - name: Build iOS
-      run: flutter build ios --release --no-codesign
+      run: |
+        export PATH="$PATH:$GITHUB_WORKSPACE/flutter/bin"
+        flutter build ios --release --no-codesign
     
     - name: Upload artifacts
       uses: actions/upload-artifact@v4
