@@ -19,20 +19,33 @@ jobs:
         curl -sL https://storage.googleapis.com/flutter_infra_release/releases/stable/macos/flutter_macos_3.27.4-stable.zip -o flutter.zip
         unzip -q flutter.zip
         rm flutter.zip
-        export PATH="$PATH:$GITHUB_WORKSPACE/flutter/bin"
-        flutter --version
     
     - name: Install dependencies
       run: |
         export PATH="$PATH:$GITHUB_WORKSPACE/flutter/bin"
         flutter pub get
     
+    - name: Check iOS directory
+      run: |
+        ls -la ios/
+        ls -la ios/Flutter/
+        cat ios/Flutter/Debug.xcconfig || echo "No Debug.xcconfig"
+        cat ios/Flutter/Release.xcconfig || echo "No Release.xcconfig"
+    
     - name: Build iOS
       run: |
         export PATH="$PATH:$GITHUB_WORKSPACE/flutter/bin"
-        flutter build ios --release --no-codesign
+        flutter build ios --release --no-codesign 2>&1 | tee build.log
+        echo "=== BUILD LOG END ==="
+        tail -100 build.log
+    
+    - name: Check build result
+      run: |
+        ls -la build/ios/iphonesimulator/ 2>/dev/null || echo "No simulator build"
+        ls -la build/ios/iphoneos/ 2>/dev/null || echo "No device build"
     
     - name: Upload artifacts
+      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: ios-build
