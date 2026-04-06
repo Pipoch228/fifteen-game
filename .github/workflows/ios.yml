@@ -14,36 +14,30 @@ jobs:
     steps:
     - uses: actions/checkout@v4
     
+    - name: Cache Flutter
+      uses: actions/cache@v3
+      with:
+        path: ~/flutter
+        key: ${{ runner.os }}-flutter-v2-${{ hashFiles('**/pubspec.lock') }}
+        restore-keys: |
+          ${{ runner.os }}-flutter-v2-
+    
     - name: Setup Flutter
-      uses: subosito/flutter-action@v2
+      uses: subosito/flutter-action@v1
       with:
         flutter-version: 'stable'
+        cache: true
+        cache-path: ~/flutter
     
-    - name: Debug Flutter
-      run: |
-        pwd
-        which flutter || echo "Flutter not in PATH"
-        ls -la $HOME/flutter/bin/ 2>/dev/null || echo "Flutter not installed"
-        flutter --version || echo "Flutter command failed"
-    
-    - name: Get dependencies
-      run: flutter pub get || echo "flutter pub get failed"
-    
-    - name: Check Flutter doctor
-      run: flutter doctor || echo "flutter doctor failed"
-    
-    - name: List available simulators
-      run: xcrun simctl list devices available || echo "No simulators"
+    - name: Install dependencies
+      run: flutter pub get
     
     - name: Build iOS
-      run: |
-        echo "Starting iOS build..."
-        flutter build ios --release --no-codesign 2>&1
-        echo "Build command completed"
+      run: flutter build ios --release --no-codesign
     
-    - name: Check build output
-      run: |
-        echo "Checking build directory..."
-        ls -la build/ios/ 2>/dev/null || echo "No build/ios directory"
-        ls -la build/ios/iphonesimulator/ 2>/dev/null || echo "No iphonesimulator"
-        ls -la build/ios/iphoneos/ 2>/dev/null || echo "No iphoneos"
+    - name: Upload artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: ios-build
+        path: build/ios/iphonesimulator/Runner.app
+        retention-days: 7
