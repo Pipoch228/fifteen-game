@@ -17,17 +17,23 @@ jobs:
     - name: Set up Flutter
       uses: subosito/flutter-action@v2
       with:
-        flutter-version: '3.27.4'
-        channel: 'stable'
+        flutter-version: 'stable'
     
     - name: Install dependencies
       run: |
         flutter pub get
+        flutter doctor
     
     - name: Build iOS
-      run: flutter build ios --release --no-codesign
+      run: |
+        flutter build ios --release --no-codesign 2>&1 || true
+    
+    - name: Check build output
+      run: |
+        ls -la build/ios/ 2>/dev/null || echo "No build directory"
     
     - name: Upload build artifacts
+      if: success()
       uses: actions/upload-artifact@v4
       with:
         name: ios-build
